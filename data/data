@@ -1,0 +1,436 @@
+{
+  "generated_at": "2026-06-01T06:39:33.933492+00:00",
+  "is_seed": true,
+  "summary": {
+    "total_urls": 19,
+    "scored": 3,
+    "no_eeat_score": 16,
+    "avg_eeat": 58.7,
+    "content_changed_today": 3,
+    "by_freshness": {
+      "very_stale": 19
+    },
+    "by_grade": {
+      "A": 1,
+      "C": 1,
+      "F": 1
+    },
+    "stale_or_worse": 19
+  },
+  "pages": [
+    {
+      "url": "https://www.bikedekho.com/royal-enfield/hunter",
+      "page_type": "model_page",
+      "status": "ok",
+      "http_status": 200,
+      "title": "Royal Enfield Hunter 350 Price, Mileage, Specs, Images & Colours",
+      "last_updated": null,
+      "last_updated_source": "pending_live_crawl",
+      "days_since_update": null,
+      "freshness_label": "very_stale",
+      "word_count": 1400,
+      "canonical": "https://www.bikedekho.com/royal-enfield/hunter",
+      "canonical_self": true,
+      "noindex": false,
+      "rating": 4.4,
+      "review_count": 1220,
+      "schema_types": [
+        "Product",
+        "BreadcrumbList",
+        "FAQPage",
+        "AggregateRating"
+      ],
+      "internal_links": 120,
+      "eeat": {
+        "experience": 20,
+        "expertise": 21,
+        "authoritativeness": 25,
+        "trustworthiness": 15,
+        "total": 81,
+        "grade": "A",
+        "reasons": {
+          "experience": [
+            "Has a user/owner reviews section (+6)",
+            "1220 owner reviews (+8)",
+            "Aggregate owner rating 4.4 shown (+3)",
+            "Owner-comparison content present (+3)"
+          ],
+          "expertise": [
+            "Expert verdict / road-test content (+7)",
+            "Substantial editorial text (1400 words) (+6)",
+            "Detailed specifications present (+5)",
+            "Variant price table (+3)"
+          ],
+          "authoritativeness": [
+            "Linked news / latest stories (+4)",
+            "Strong internal linking (120) (+6)",
+            "BreadcrumbList structured data (+4)",
+            "FAQ content/markup (+4)",
+            "Self-referencing canonical = indexable primary entity (+7)"
+          ],
+          "trustworthiness": [
+            "Served over HTTPS (+3)",
+            "Freshness = 'very_stale' (+0)",
+            "Product structured data (+4)",
+            "aggregateRating in schema (+3)",
+            "Transparent pricing (+3)",
+            "Healthy meta description (+2)"
+          ]
+        },
+        "flags": []
+      },
+      "seed": true,
+      "note": "Seed row from a verified live fetch. last_updated is pending the first real crawl run (chat-side fetch strips JSON-LD; the crawler reads raw HTML).",
+      "diff": {
+        "is_new": true,
+        "added_sections": [],
+        "removed_sections": [],
+        "word_delta": 1400,
+        "content_changed": true
+      }
+    },
+    {
+      "url": "https://www.bikedekho.com/bajaj/pulsar-n160",
+      "page_type": "model_page",
+      "status": "ok",
+      "http_status": 200,
+      "title": "Bajaj Pulsar N160 Price, Mileage, Specs, Images & Colours",
+      "last_updated": null,
+      "last_updated_source": "pending_live_crawl",
+      "days_since_update": null,
+      "freshness_label": "very_stale",
+      "word_count": 950,
+      "canonical": "https://www.bikedekho.com/bajaj/pulsar-n160",
+      "canonical_self": true,
+      "noindex": false,
+      "rating": null,
+      "review_count": null,
+      "schema_types": [
+        "Product",
+        "BreadcrumbList",
+        "FAQPage",
+        "AggregateRating"
+      ],
+      "internal_links": 110,
+      "eeat": {
+        "experience": 9,
+        "expertise": 14,
+        "authoritativeness": 25,
+        "trustworthiness": 15,
+        "total": 63,
+        "grade": "C",
+        "reasons": {
+          "experience": [
+            "Has a user/owner reviews section (+6)",
+            "Owner-comparison content present (+3)"
+          ],
+          "expertise": [
+            "Substantial editorial text (950 words) (+6)",
+            "Detailed specifications present (+5)",
+            "Variant price table (+3)"
+          ],
+          "authoritativeness": [
+            "Linked news / latest stories (+4)",
+            "Strong internal linking (110) (+6)",
+            "BreadcrumbList structured data (+4)",
+            "FAQ content/markup (+4)",
+            "Self-referencing canonical = indexable primary entity (+7)"
+          ],
+          "trustworthiness": [
+            "Served over HTTPS (+3)",
+            "Freshness = 'very_stale' (+0)",
+            "Product structured data (+4)",
+            "aggregateRating in schema (+3)",
+            "Transparent pricing (+3)",
+            "Healthy meta description (+2)"
+          ]
+        },
+        "flags": []
+      },
+      "seed": true,
+      "note": "Seed row from a verified live fetch. last_updated is pending the first real crawl run (chat-side fetch strips JSON-LD; the crawler reads raw HTML).",
+      "diff": {
+        "is_new": true,
+        "added_sections": [],
+        "removed_sections": [],
+        "word_delta": 950,
+        "content_changed": true
+      }
+    },
+    {
+      "url": "https://www.bikedekho.com/suzuki/burgman-street/images/handlebar-202338",
+      "page_type": "image",
+      "status": "ok",
+      "http_status": 200,
+      "title": "New Suzuki Burgman Street Price - Mileage, Colours, Images | BikeDekho",
+      "last_updated": null,
+      "last_updated_source": "pending_live_crawl",
+      "days_since_update": null,
+      "freshness_label": "very_stale",
+      "word_count": 140,
+      "canonical": "https://www.bikedekho.com/suzuki/burgman-street",
+      "canonical_self": false,
+      "noindex": false,
+      "rating": null,
+      "review_count": null,
+      "schema_types": [
+        "Product",
+        "BreadcrumbList",
+        "FAQPage",
+        "AggregateRating"
+      ],
+      "internal_links": 80,
+      "eeat": {
+        "experience": 0,
+        "expertise": 3,
+        "authoritativeness": 14,
+        "trustworthiness": 15,
+        "total": 32,
+        "grade": "F",
+        "reasons": {
+          "experience": [],
+          "expertise": [
+            "Thin content (140 words) (+0)",
+            "Variant price table (+3)"
+          ],
+          "authoritativeness": [
+            "Strong internal linking (80) (+6)",
+            "BreadcrumbList structured data (+4)",
+            "FAQ content/markup (+4)",
+            "Canonical points to a DIFFERENT URL \u2014 authority consolidated elsewhere (+0)"
+          ],
+          "trustworthiness": [
+            "Served over HTTPS (+3)",
+            "Freshness = 'very_stale' (+0)",
+            "Product structured data (+4)",
+            "aggregateRating in schema (+3)",
+            "Transparent pricing (+3)",
+            "Healthy meta description (+2)"
+          ]
+        },
+        "flags": [
+          "Secondary template ('image') \u2014 usually canonicalised to parent",
+          "Canonicalised to another URL",
+          "Thin content (<200 words)"
+        ]
+      },
+      "seed": true,
+      "note": "Seed row from a verified live fetch. last_updated is pending the first real crawl run (chat-side fetch strips JSON-LD; the crawler reads raw HTML).",
+      "diff": {
+        "is_new": true,
+        "added_sections": [],
+        "removed_sections": [],
+        "word_delta": 140,
+        "content_changed": true
+      }
+    },
+    {
+      "url": "https://www.bikedekho.com/hero/splendor-plus",
+      "page_type": "model_page",
+      "status": "queued",
+      "last_updated": null,
+      "freshness_label": "very_stale",
+      "eeat": null,
+      "diff": {
+        "is_new": true,
+        "content_changed": false
+      },
+      "note": "Queued \u2014 populated on first crawler run."
+    },
+    {
+      "url": "https://www.bikedekho.com/tvs/jupiter",
+      "page_type": "model_page",
+      "status": "queued",
+      "last_updated": null,
+      "freshness_label": "very_stale",
+      "eeat": null,
+      "diff": {
+        "is_new": true,
+        "content_changed": false
+      },
+      "note": "Queued \u2014 populated on first crawler run."
+    },
+    {
+      "url": "https://www.bikedekho.com/ather-energy/rizta",
+      "page_type": "model_page",
+      "status": "queued",
+      "last_updated": null,
+      "freshness_label": "very_stale",
+      "eeat": null,
+      "diff": {
+        "is_new": true,
+        "content_changed": false
+      },
+      "note": "Queued \u2014 populated on first crawler run."
+    },
+    {
+      "url": "https://www.bikedekho.com/ktm/duke-390",
+      "page_type": "model_page",
+      "status": "queued",
+      "last_updated": null,
+      "freshness_label": "very_stale",
+      "eeat": null,
+      "diff": {
+        "is_new": true,
+        "content_changed": false
+      },
+      "note": "Queued \u2014 populated on first crawler run."
+    },
+    {
+      "url": "https://www.bikedekho.com/yamaha/r15-v4",
+      "page_type": "model_page",
+      "status": "queued",
+      "last_updated": null,
+      "freshness_label": "very_stale",
+      "eeat": null,
+      "diff": {
+        "is_new": true,
+        "content_changed": false
+      },
+      "note": "Queued \u2014 populated on first crawler run."
+    },
+    {
+      "url": "https://www.bikedekho.com/honda/activa",
+      "page_type": "model_page",
+      "status": "queued",
+      "last_updated": null,
+      "freshness_label": "very_stale",
+      "eeat": null,
+      "diff": {
+        "is_new": true,
+        "content_changed": false
+      },
+      "note": "Queued \u2014 populated on first crawler run."
+    },
+    {
+      "url": "https://www.bikedekho.com/ola-electric/s1-pro",
+      "page_type": "model_page",
+      "status": "queued",
+      "last_updated": null,
+      "freshness_label": "very_stale",
+      "eeat": null,
+      "diff": {
+        "is_new": true,
+        "content_changed": false
+      },
+      "note": "Queued \u2014 populated on first crawler run."
+    },
+    {
+      "url": "https://www.bikedekho.com/bajaj/chetak",
+      "page_type": "model_page",
+      "status": "queued",
+      "last_updated": null,
+      "freshness_label": "very_stale",
+      "eeat": null,
+      "diff": {
+        "is_new": true,
+        "content_changed": false
+      },
+      "note": "Queued \u2014 populated on first crawler run."
+    },
+    {
+      "url": "https://www.bikedekho.com/royal-enfield/classic-350/",
+      "page_type": "model_page",
+      "status": "queued",
+      "last_updated": null,
+      "freshness_label": "very_stale",
+      "eeat": null,
+      "diff": {
+        "is_new": true,
+        "content_changed": false
+      },
+      "note": "Queued \u2014 populated on first crawler run."
+    },
+    {
+      "url": "https://www.bikedekho.com/ola-electric/s1-pro.html",
+      "page_type": "model_page",
+      "status": "queued",
+      "last_updated": null,
+      "freshness_label": "very_stale",
+      "eeat": null,
+      "diff": {
+        "is_new": true,
+        "content_changed": false
+      },
+      "note": "Queued \u2014 populated on first crawler run."
+    },
+    {
+      "url": "https://www.bikedekho.com/xsr155/bike-loan-emi-calculator",
+      "page_type": "emi_tool",
+      "status": "queued",
+      "last_updated": null,
+      "freshness_label": "very_stale",
+      "eeat": null,
+      "diff": {
+        "is_new": true,
+        "content_changed": false
+      },
+      "note": "Queued \u2014 populated on first crawler run."
+    },
+    {
+      "url": "https://www.bikedekho.com/vespa/elettrica?amp=1",
+      "page_type": "amp_or_param",
+      "status": "queued",
+      "last_updated": null,
+      "freshness_label": "very_stale",
+      "eeat": null,
+      "diff": {
+        "is_new": true,
+        "content_changed": false
+      },
+      "note": "Queued \u2014 populated on first crawler run."
+    },
+    {
+      "url": "https://www.bikedekho.com/hero/glamour/images/fuel-tank-right-157092",
+      "page_type": "image",
+      "status": "queued",
+      "last_updated": null,
+      "freshness_label": "very_stale",
+      "eeat": null,
+      "diff": {
+        "is_new": true,
+        "content_changed": false
+      },
+      "note": "Queued \u2014 populated on first crawler run."
+    },
+    {
+      "url": "https://www.bikedekho.com/bullet-650/mileage",
+      "page_type": "mileage",
+      "status": "queued",
+      "last_updated": null,
+      "freshness_label": "very_stale",
+      "eeat": null,
+      "diff": {
+        "is_new": true,
+        "content_changed": false
+      },
+      "note": "Queued \u2014 populated on first crawler run."
+    },
+    {
+      "url": "https://www.bikedekho.com/vespa/946-dragon/colors",
+      "page_type": "colours",
+      "status": "queued",
+      "last_updated": null,
+      "freshness_label": "very_stale",
+      "eeat": null,
+      "diff": {
+        "is_new": true,
+        "content_changed": false
+      },
+      "note": "Queued \u2014 populated on first crawler run."
+    },
+    {
+      "url": "https://www.bikedekho.com/royal-enfield/royal-enfield-electric-bike/range",
+      "page_type": "range",
+      "status": "queued",
+      "last_updated": null,
+      "freshness_label": "very_stale",
+      "eeat": null,
+      "diff": {
+        "is_new": true,
+        "content_changed": false
+      },
+      "note": "Queued \u2014 populated on first crawler run."
+    }
+  ]
+}
