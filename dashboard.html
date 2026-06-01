@@ -119,6 +119,49 @@ td.url .pt{display:inline-block;font-size:10px;color:var(--ink3);margin-left:0}
 .tag{display:inline-block;background:var(--bg2);border:1px solid var(--line);color:var(--ink2);
   font-size:11px;border-radius:6px;padding:3px 8px;margin:2px 4px 0 0;font-family:"JetBrains Mono",monospace}
 .footnote{color:var(--ink3);font-size:12px;margin-top:26px;line-height:1.5;border-top:1px solid var(--line);padding-top:16px}
+/* recommendations */
+.recsec h3{color:var(--amber2)}
+.rec{background:var(--bg2);border:1px solid var(--line);border-left-width:3px;border-radius:9px;
+  padding:10px 12px;margin:0 0 8px}
+.rec.p1{border-left-color:var(--red)} .rec.p2{border-left-color:var(--amber)}
+.rec.p3{border-left-color:var(--blue)} .rec.pinfo{border-left-color:var(--ink3)}
+.rectop{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.recpri{font-family:"JetBrains Mono",monospace;font-size:10px;font-weight:700;letter-spacing:.08em;
+  padding:2px 7px;border-radius:5px;background:#2b261d;color:var(--ink)}
+.rec.p1 .recpri{background:rgba(210,103,79,.2);color:var(--red)}
+.rec.p2 .recpri{background:rgba(232,161,58,.2);color:var(--amber)}
+.rec.p3 .recpri{background:rgba(122,166,194,.2);color:var(--blue)}
+.recpts{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--green);font-weight:700}
+.recpill{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--ink3);margin-left:auto}
+.recact{font-size:13px;color:var(--ink);line-height:1.45}
+/* lifecycle badges */
+.lc{font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:999px;text-transform:capitalize;
+  letter-spacing:.02em;white-space:nowrap}
+.lc-launched{background:rgba(127,176,105,.16);color:var(--green)}
+.lc-upcoming{background:rgba(122,166,194,.18);color:var(--blue)}
+.lc-disc{background:rgba(210,103,79,.16);color:var(--red)}
+.lc-unknown{background:#2b261d;color:var(--ink3)}
+.lc-q{opacity:.6;margin-left:2px}
+.p1dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--red);
+  margin-right:6px;vertical-align:middle}
+/* framework panel */
+.framework{margin:30px 0 0;border:1px solid var(--line);border-radius:14px;background:var(--bg2);overflow:hidden}
+.fw-head{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;cursor:pointer;
+  user-select:none}
+.fw-head h2{font-family:"Fraunces",serif;font-size:19px;font-weight:600;margin:0}
+.fw-toggle{color:var(--ink3);transition:transform .2s}
+.fw-head.open .fw-toggle{transform:rotate(180deg)}
+.fw-body{display:none;padding:0 20px 20px}
+.fw-body.open{display:block}
+.fw-intro{color:var(--ink2);font-size:13.5px;line-height:1.55;margin:0 0 16px;max-width:900px}
+.fw-intro a{color:var(--blue)} .fw-intro em{color:var(--amber2);font-style:italic}
+.fw-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.fw-card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:13px 14px}
+.fw-t{font-family:"JetBrains Mono",monospace;font-size:12px;font-weight:700;margin-bottom:7px}
+.fw-card p{margin:0;font-size:12.5px;color:var(--ink2);line-height:1.5}
+.fw-foot{color:var(--ink2);font-size:12.5px;line-height:1.6;margin:16px 0 0;border-top:1px solid var(--line);padding-top:14px}
+.fw-foot b{color:var(--ink)} .fw-foot i{color:var(--amber2);font-style:italic}
+@media(max-width:900px){.fw-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:900px){.kpis{grid-template-columns:repeat(2,1fr)}h1{font-size:30px}}
 </style>
 </head>
@@ -141,9 +184,11 @@ td.url .pt{display:inline-block;font-size:10px;color:var(--ink3);margin-left:0}
     <select id="fFresh"><option value="">All freshness</option></select>
     <select id="fGrade"><option value="">All grades</option></select>
     <select id="fType"><option value="">All page types</option></select>
+    <select id="fLife"><option value="">All lifecycle</option></select>
     <span class="chip" data-toggle="noscore">No EEAT score</span>
     <span class="chip" data-toggle="lowfresh">Low freshness</span>
     <span class="chip" data-toggle="changed">Changed today</span>
+    <span class="chip" data-toggle="p1">Has P1 action</span>
   </div>
 
   <div class="tablewrap">
@@ -152,6 +197,7 @@ td.url .pt{display:inline-block;font-size:10px;color:var(--ink3);margin-left:0}
         <th data-sort="url">URL</th>
         <th data-sort="grade">Grade</th>
         <th data-sort="total">EEAT</th>
+        <th data-sort="lifecycle">Status</th>
         <th data-sort="freshness_label">Freshness</th>
         <th data-sort="last_updated">Last updated</th>
         <th data-sort="word_count">Words</th>
@@ -162,14 +208,33 @@ td.url .pt{display:inline-block;font-size:10px;color:var(--ink3);margin-left:0}
     <div class="empty" id="empty" style="display:none">No URLs match these filters.</div>
   </div>
 
-  <p class="footnote" id="rubric"></p>
+  <section class="framework">
+    <div class="fw-head" onclick="document.getElementById('fwbody').classList.toggle('open');this.classList.toggle('open')">
+      <h2>How the E-E-A-T score is calculated</h2>
+      <span class="fw-toggle">▾</span>
+    </div>
+    <div class="fw-body open" id="fwbody">
+      <p class="fw-intro">Based on Google's <a href="https://developers.google.com/search/docs/fundamentals/creating-helpful-content" target="_blank" rel="noopener">Creating Helpful, Reliable, People-First Content</a> guidance and the E-E-A-T framework from the Search Quality Rater Guidelines. Google's own principle: <em>Trust is the most important member; the others feed into it — and content needn't cover every aspect to be helpful.</em> Each page is scored 0–100 across four pillars.</p>
+      <div class="fw-grid">
+        <div class="fw-card"><div class="fw-t" style="color:var(--green)">Experience · /20</div>
+          <p>First-hand ownership signals: user/owner reviews, owner ratings, real-world comparisons. <b>Not applicable to upcoming models</b> (no owners yet) — excluded and the score rescaled.</p></div>
+        <div class="fw-card"><div class="fw-t" style="color:var(--blue)">Expertise · /25</div>
+          <p>Editorial depth: expert verdict / road-test, spec completeness, word-count depth, pros &amp; cons, variant pricing, and a visible author (Google's "Who").</p></div>
+        <div class="fw-card"><div class="fw-t" style="color:var(--amber)">Authoritativeness · /25</div>
+          <p>Internal linking depth, linked news, BreadcrumbList &amp; FAQ schema, and a self-referencing canonical (this URL is the indexable primary entity).</p></div>
+        <div class="fw-card"><div class="fw-t" style="color:var(--amber2)">Trustworthiness · /30</div>
+          <p>The heaviest pillar. HTTPS, <b>freshness</b> (the single biggest lever), Product &amp; aggregateRating schema, transparent pricing, indexability. Stale or broken pages lose the most here.</p></div>
+      </div>
+      <p class="fw-foot"><b>Who / How / Why.</b> Google asks: is it clear <i>who</i> made the content, <i>how</i> it was produced (first-hand, well-researched), and <i>why</i> it exists (to help people, not to rank). <b>Grades:</b> A ≥80 · B ≥65 · C ≥50 · D ≥35 · F &lt;35. <b>Recommendations</b> are derived from the same signals as the score — they only appear for what's genuinely missing, never for things already on the page, and are tailored to the model's lifecycle stage.</p>
+    </div>
+  </section>
 </div>
 
 <div class="scrim" id="scrim"></div>
 <aside class="drawer" id="drawer"></aside>
 
 <script id="seed" type="application/json">{
-  "generated_at": "2026-06-01T06:39:33.933492+00:00",
+  "generated_at": "2026-06-01T12:27:48.258838+00:00",
   "is_seed": true,
   "summary": {
     "total_urls": 19,
@@ -177,6 +242,7 @@ td.url .pt{display:inline-block;font-size:10px;color:var(--ink3);margin-left:0}
     "no_eeat_score": 16,
     "avg_eeat": 58.7,
     "content_changed_today": 3,
+    "pages_with_p1_actions": 2,
     "by_freshness": {
       "very_stale": 19
     },
@@ -204,6 +270,8 @@ td.url .pt{display:inline-block;font-size:10px;color:var(--ink3);margin-left:0}
       "noindex": false,
       "rating": 4.4,
       "review_count": 1220,
+      "lifecycle": "launched",
+      "lifecycle_confidence": "high",
       "schema_types": [
         "Product",
         "BreadcrumbList",
@@ -218,6 +286,8 @@ td.url .pt{display:inline-block;font-size:10px;color:var(--ink3);margin-left:0}
         "trustworthiness": 15,
         "total": 81,
         "grade": "A",
+        "lifecycle": "launched",
+        "lifecycle_confidence": "high",
         "reasons": {
           "experience": [
             "Has a user/owner reviews section (+6)",
@@ -247,7 +317,21 @@ td.url .pt{display:inline-block;font-size:10px;color:var(--ink3);margin-left:0}
             "Healthy meta description (+2)"
           ]
         },
-        "flags": []
+        "flags": [],
+        "recommendations": [
+          {
+            "priority": "P1",
+            "points": 12,
+            "pillar": "trust",
+            "action": "Page hasn't been updated in months. Refresh it \u2014 update prices, add the latest variant/colour or news, and re-save so the modified date moves. Freshness is the single biggest trust lever."
+          },
+          {
+            "priority": "P3",
+            "points": 4,
+            "pillar": "expertise",
+            "action": "No pros & cons. Add a 'things we like / don't like' block \u2014 high-value, scannable content."
+          }
+        ]
       },
       "seed": true,
       "note": "Seed row from a verified live fetch. last_updated is pending the first real crawl run (chat-side fetch strips JSON-LD; the crawler reads raw HTML).",
@@ -275,6 +359,8 @@ td.url .pt{display:inline-block;font-size:10px;color:var(--ink3);margin-left:0}
       "noindex": false,
       "rating": null,
       "review_count": null,
+      "lifecycle": "launched",
+      "lifecycle_confidence": "high",
       "schema_types": [
         "Product",
         "BreadcrumbList",
@@ -289,6 +375,8 @@ td.url .pt{display:inline-block;font-size:10px;color:var(--ink3);margin-left:0}
         "trustworthiness": 15,
         "total": 63,
         "grade": "C",
+        "lifecycle": "launched",
+        "lifecycle_confidence": "high",
         "reasons": {
           "experience": [
             "Has a user/owner reviews section (+6)",
@@ -315,7 +403,33 @@ td.url .pt{display:inline-block;font-size:10px;color:var(--ink3);margin-left:0}
             "Healthy meta description (+2)"
           ]
         },
-        "flags": []
+        "flags": [],
+        "recommendations": [
+          {
+            "priority": "P1",
+            "points": 12,
+            "pillar": "trust",
+            "action": "Page hasn't been updated in months. Refresh it \u2014 update prices, add the latest variant/colour or news, and re-save so the modified date moves. Freshness is the single biggest trust lever."
+          },
+          {
+            "priority": "P2",
+            "points": 7,
+            "pillar": "expertise",
+            "action": "No expert verdict / road-test content. Add a first-hand expert review section \u2014 this is core E-E-A-T 'Expertise' and a strong ranking signal."
+          },
+          {
+            "priority": "P3",
+            "points": 4,
+            "pillar": "expertise",
+            "action": "No pros & cons. Add a 'things we like / don't like' block \u2014 high-value, scannable content."
+          },
+          {
+            "priority": "P3",
+            "points": 3,
+            "pillar": "experience",
+            "action": "Reviews section exists but no review volume detected. Encourage owner reviews to build depth."
+          }
+        ]
       },
       "seed": true,
       "note": "Seed row from a verified live fetch. last_updated is pending the first real crawl run (chat-side fetch strips JSON-LD; the crawler reads raw HTML).",
@@ -343,6 +457,8 @@ td.url .pt{display:inline-block;font-size:10px;color:var(--ink3);margin-left:0}
       "noindex": false,
       "rating": null,
       "review_count": null,
+      "lifecycle": "launched",
+      "lifecycle_confidence": "high",
       "schema_types": [
         "Product",
         "BreadcrumbList",
@@ -357,6 +473,8 @@ td.url .pt{display:inline-block;font-size:10px;color:var(--ink3);margin-left:0}
         "trustworthiness": 15,
         "total": 32,
         "grade": "F",
+        "lifecycle": "launched",
+        "lifecycle_confidence": "high",
         "reasons": {
           "experience": [],
           "expertise": [
@@ -382,6 +500,14 @@ td.url .pt{display:inline-block;font-size:10px;color:var(--ink3);margin-left:0}
           "Secondary template ('image') \u2014 usually canonicalised to parent",
           "Canonicalised to another URL",
           "Thin content (<200 words)"
+        ],
+        "recommendations": [
+          {
+            "priority": "info",
+            "points": 0,
+            "pillar": "structure",
+            "action": "This is a secondary page that canonicalises to the parent model page. Fix the parent model page instead \u2014 improvements here don't rank independently."
+          }
         ]
       },
       "seed": true,
@@ -608,7 +734,7 @@ td.url .pt{display:inline-block;font-size:10px;color:var(--ink3);margin-left:0}
 const PILLAR_MAX={experience:20,expertise:25,authoritativeness:25,trustworthiness:30};
 const PILLAR_COL={experience:"var(--green)",expertise:"var(--blue)",authoritativeness:"var(--amber)",trustworthiness:"var(--amber2)"};
 let DATA=null, VIEW=[], sortKey="total", sortDir=-1;
-const toggles={noscore:false,lowfresh:false,changed:false};
+const toggles={noscore:false,lowfresh:false,changed:false,p1:false};
 
 async function load(){
   try{
@@ -629,43 +755,48 @@ function boot(){
   fillSelect('fFresh', uniq('freshness_label'));
   fillSelect('fGrade', ['A','B','C','D','F']);
   fillSelect('fType', uniq('page_type'));
+  fillSelect('fLife', ['launched','upcoming','discontinued','unknown']);
   bind();
   apply();
-  document.getElementById('rubric').innerHTML=
-    "<b>Scoring rubric.</b> Experience /20 (owner reviews, ratings, comparisons) · Expertise /25 (expert verdict, spec depth, editorial word count, pros &amp; cons) · Authoritativeness /25 (internal links, news, breadcrumb/FAQ schema, self-canonical) · Trustworthiness /30 (HTTPS, <i>freshness</i>, Product &amp; rating schema, transparent pricing, indexability). Freshness is the single heaviest trust lever, so a page that stops being updated visibly loses EEAT over time.";
 }
 
 const val=(p,k)=> k==='total'?(p.eeat?p.eeat.total:-1)
   : k==='grade'?(p.eeat?p.eeat.grade:'Z')
   : k==='changed'?(p.diff&&p.diff.content_changed?1:0)
   : k==='last_updated'?(p.last_updated||'')
+  : k==='lifecycle'?(p.lifecycle||'zzz')
   : (p[k]!==undefined?p[k]:'');
 
 function uniq(k){return [...new Set(DATA.pages.map(p=>p[k]).filter(Boolean))].sort();}
-function fillSelect(id,opts){const s=document.getElementById(id);opts.forEach(o=>{const e=document.createElement('option');e.value=o;e.textContent=o;s.appendChild(e);});}
+function fillSelect(id,opts){const s=document.getElementById(id);if(!s)return;opts.forEach(o=>{const e=document.createElement('option');e.value=o;e.textContent=o;s.appendChild(e);});}
 
 function bind(){
   document.getElementById('q').oninput=apply;
-  ['fFresh','fGrade','fType'].forEach(id=>document.getElementById(id).onchange=apply);
+  ['fFresh','fGrade','fType','fLife'].forEach(id=>{const el=document.getElementById(id);if(el)el.onchange=apply;});
   document.querySelectorAll('.chip').forEach(c=>c.onclick=()=>{const t=c.dataset.toggle;toggles[t]=!toggles[t];c.classList.toggle('on',toggles[t]);apply();});
-  document.querySelectorAll('th[data-sort]').forEach(th=>th.onclick=()=>{const k=th.dataset.sort;if(sortKey===k)sortDir*=-1;else{sortKey=k;sortDir=(k==='url'||k==='freshness_label')?1:-1;}apply();});
+  document.querySelectorAll('th[data-sort]').forEach(th=>th.onclick=()=>{const k=th.dataset.sort;if(sortKey===k)sortDir*=-1;else{sortKey=k;sortDir=(k==='url'||k==='freshness_label'||k==='lifecycle')?1:-1;}apply();});
   document.getElementById('scrim').onclick=closeDrawer;
   document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDrawer();});
 }
+
+function hasP1(p){return p.eeat && (p.eeat.recommendations||[]).some(r=>r.priority==='P1');}
 
 function apply(){
   const q=document.getElementById('q').value.toLowerCase();
   const ff=document.getElementById('fFresh').value;
   const fg=document.getElementById('fGrade').value;
   const ft=document.getElementById('fType').value;
+  const fl=document.getElementById('fLife').value;
   VIEW=DATA.pages.filter(p=>{
     if(q && !((p.url||'').toLowerCase().includes(q)||(p.title||'').toLowerCase().includes(q)))return false;
     if(ff && p.freshness_label!==ff)return false;
     if(fg && (!p.eeat||p.eeat.grade!==fg))return false;
     if(ft && p.page_type!==ft)return false;
+    if(fl && p.lifecycle!==fl)return false;
     if(toggles.noscore && p.eeat)return false;
     if(toggles.lowfresh && !['stale','very_stale'].includes(p.freshness_label))return false;
     if(toggles.changed && !(p.diff&&p.diff.content_changed))return false;
+    if(toggles.p1 && !hasP1(p))return false;
     return true;
   }).sort((a,b)=>{let x=val(a,sortKey),y=val(b,sortKey);return (x<y?-1:x>y?1:0)*sortDir;});
   renderTable();
@@ -676,13 +807,21 @@ function renderKPIs(){
   const cards=[
     ['Total URLs',s.total_urls,''],
     ['Scored',s.scored,'good'],
-    ['No EEAT score',s.no_eeat_score,'warn'],
     ['Avg EEAT',s.avg_eeat,''],
+    ['Pages w/ P1 action',s.pages_with_p1_actions!=null?s.pages_with_p1_actions:'—','alert'],
     ['Changed today',s.content_changed_today,'good'],
     ['Stale / worse',s.stale_or_worse,'alert'],
   ];
   document.getElementById('kpis').innerHTML=cards.map(([l,v,c])=>
     `<div class="kpi ${c}"><div class="lab">${l}</div><div class="val">${v}</div></div>`).join('');
+}
+
+const LIFE_CLS={launched:'lc-launched',upcoming:'lc-upcoming',discontinued:'lc-disc',unknown:'lc-unknown'};
+function lifeBadge(p){
+  const l=p.lifecycle||'unknown';
+  const conf=p.lifecycle_confidence&&p.lifecycle_confidence!=='high'?` title="confidence: ${p.lifecycle_confidence}"`:'';
+  const star=p.lifecycle_confidence==='low'?'<span class="lc-q">?</span>':'';
+  return `<span class="lc ${LIFE_CLS[l]}"${conf}>${l}${star}</span>`;
 }
 
 function renderTable(){
@@ -692,10 +831,12 @@ function renderTable(){
     const g=p.eeat?p.eeat.grade:'none';
     const tot=p.eeat?p.eeat.total:'—';
     const ch=p.diff&&p.diff.content_changed?'<span class="dot"></span>':'';
+    const p1=hasP1(p)?'<span class="p1dot" title="Has a P1 priority action"></span>':'';
     return `<tr data-i="${i}">
-      <td class="url" title="${p.url}">${p.url.replace('https://www.bikedekho.com','')}<br><span class="pt">${p.page_type||''}${p.status==='queued'?' · queued':''}</span></td>
+      <td class="url" title="${p.url}">${p1}${p.url.replace('https://www.bikedekho.com','')}<br><span class="pt">${p.page_type||''}${p.status==='queued'?' · queued':''}</span></td>
       <td><span class="grade g-${g}">${p.eeat?g:'·'}</span></td>
       <td class="num">${tot}</td>
+      <td>${lifeBadge(p)}</td>
       <td><span class="fresh f-${p.freshness_label||'very_stale'}">${(p.freshness_label||'unknown').replace('_',' ')}</span></td>
       <td class="num">${p.last_updated||'—'}</td>
       <td class="num">${p.word_count!=null?p.word_count:'—'}</td>
@@ -706,8 +847,15 @@ function renderTable(){
 }
 
 function bar(label,key,p){
-  const v=p.eeat[key],max=PILLAR_MAX[key],pct=Math.round(v/max*100);
+  const v=p.eeat[key],max=PILLAR_MAX[key];
   const rs=(p.eeat.reasons[key]||[]).map(r=>`<li class="${r.includes('(-')?'neg':''}">${r}</li>`).join('');
+  if(v===null||v===undefined){
+    return `<div class="pillar"><div class="ph"><span class="nm">${label}</span>
+      <span class="pv" style="color:var(--ink3)">N/A</span></div>
+      <div class="track"><i style="width:0%"></i></div>
+      <ul class="reasons">${rs}</ul></div>`;
+  }
+  const pct=Math.round(v/max*100);
   return `<div class="pillar"><div class="ph"><span class="nm">${label}</span>
     <span class="pv">${v} / ${max}</span></div>
     <div class="track"><i style="width:${pct}%;background:${PILLAR_COL[key]}"></i></div>
@@ -719,10 +867,22 @@ function openDrawer(p){
   let body='';
   if(p.eeat){
     const e=p.eeat;
+    const recs=e.recommendations||[];
+    const recHtml = recs.length
+      ? `<div class="sec recsec"><h3>✦ Recommended actions${recs.length>1?` · ${recs.length}`:''}</h3>
+           ${recs.map(r=>{
+             const cls = r.priority==='P1'?'p1':r.priority==='P2'?'p2':r.priority==='info'?'pinfo':'p3';
+             const tag = r.priority==='info'?'NOTE':r.priority;
+             const pts = r.points>0?`<span class="recpts">+${r.points}</span>`:'';
+             return `<div class="rec ${cls}"><div class="rectop"><span class="recpri">${tag}</span>${pts}<span class="recpill">${r.pillar}</span></div><div class="recact">${r.action}</div></div>`;
+           }).join('')}
+         </div>`
+      : `<div class="sec recsec"><h3>✦ Recommended actions</h3><p style="color:var(--green);font-size:13px;margin:0">No action needed — this page is in good shape.</p></div>`;
     body=`<div class="scorehead">
         <span class="grade gradebig g-${e.grade}">${e.grade}</span>
         <div><span class="big">${e.total}</span><span class="ofs"> / 100 EEAT</span></div>
       </div>
+      ${recHtml}
       ${bar('Experience','experience',p)}
       ${bar('Expertise','expertise',p)}
       ${bar('Authoritativeness','authoritativeness',p)}
