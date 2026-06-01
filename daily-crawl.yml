@@ -1,0 +1,64 @@
+# .github/workflows/daily-crawl.yml
+# Runs the EEAT crawler every day, commits the fresh data.json + history snapshot,
+# and (optionally) publishes the dashboard to GitHub Pages.
+#
+# This is the piece that makes the dashboard "update every day" without anyone
+# pressing a button. GitHub runs it on the schedule below on their infrastructure.
+
+name: BikeDekho EEAT Daily Crawl
+
+on:
+  schedule:
+    - cron: "30 1 * * *"   # 01:30 UTC = 07:00 IST every day. Adjust as needed.
+  workflow_dispatch: {}     # also lets you trigger a run manually from the Actions tab
+
+permissions:
+  contents: write           # needed to commit the refreshed data back to the repo
+  pages: write
+  id-token: write
+
+jobs:
+  crawl:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install requests beautifulsoup4 lxml python-dateutil
+
+      - name: Run crawler
+        run: |
+          python bikedekho_eeat_crawler.py --urls urls.txt --workers 6 --delay 0.8
+
+      - name: Commit refreshed data
+        run: |
+          git config user.name  "eeat-bot"
+          git config user.email "eeat-bot@users.noreply.github.com"
+          git add data/data.json data/data.csv data/data_full.json data/history/ || true
+          git commit -m "Daily EEAT crawl: $(date -u +%F)" || echo "No changes"
+          git push || echo "Nothing to push"
+
+      # ---- Optional: publish dashboard.html + data.json as a live site ----
+      - name: Stage site
+        run: |
+          mkdir -p _site
+          cp dashboard.html _site/index.html
+          cp data/data.json _site/data.json
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: crawl
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

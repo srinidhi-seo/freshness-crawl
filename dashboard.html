@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BikeDekho · EEAT &amp; Freshness Monitor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#16140f; --bg2:#1e1b15; --panel:#211d16; --line:#3a3328;
+  --ink:#f3ece0; --ink2:#bdb3a1; --ink3:#8a8170;
+  --amber:#e8a13a; --amber2:#f5c46b;
+  --green:#7fb069; --red:#d2674f; --blue:#7aa6c2;
+  --A:#7fb069; --B:#aac46b; --C:#e8a13a; --D:#d98a4f; --F:#d2674f;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:
+   radial-gradient(1200px 600px at 80% -10%, #2a2417 0%, transparent 60%),
+   var(--bg);color:var(--ink);font-family:"Hanken Grotesk",sans-serif;font-size:15px}
+body{padding:0 0 80px}
+.wrap{max-width:1280px;margin:0 auto;padding:0 28px}
+header.top{padding:30px 0 18px;border-bottom:1px solid var(--line);position:relative}
+.kicker{font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.22em;
+  text-transform:uppercase;color:var(--amber);margin:0 0 6px}
+h1{font-family:"Fraunces",serif;font-weight:600;font-size:40px;line-height:1.02;margin:0;
+  letter-spacing:-.01em}
+h1 em{font-style:italic;color:var(--amber2)}
+.sub{color:var(--ink2);margin:8px 0 0;max-width:760px;font-size:14.5px}
+.gen{font-family:"JetBrains Mono",monospace;font-size:11.5px;color:var(--ink3);margin-top:10px}
+.seedbanner{margin:16px 0 0;background:rgba(232,161,58,.08);border:1px solid rgba(232,161,58,.35);
+  border-radius:10px;padding:11px 14px;color:var(--amber2);font-size:13px}
+.seedbanner b{color:var(--amber2)}
+/* KPI */
+.kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin:24px 0 20px}
+.kpi{background:linear-gradient(180deg,var(--panel),var(--bg2));border:1px solid var(--line);
+  border-radius:14px;padding:15px 16px}
+.kpi .lab{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--ink3)}
+.kpi .val{font-family:"Fraunces",serif;font-weight:600;font-size:30px;margin-top:6px;line-height:1}
+.kpi.alert .val{color:var(--red)} .kpi.good .val{color:var(--green)} .kpi.warn .val{color:var(--amber)}
+/* filter bar */
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:0 0 16px}
+.bar input[type=text]{flex:1;min-width:220px;background:var(--bg2);border:1px solid var(--line);
+  color:var(--ink);border-radius:10px;padding:10px 13px;font-family:inherit;font-size:14px}
+.bar select{background:var(--bg2);border:1px solid var(--line);color:var(--ink);border-radius:10px;
+  padding:10px 12px;font-family:inherit;font-size:13px}
+.chip{cursor:pointer;user-select:none;border:1px solid var(--line);background:var(--bg2);
+  color:var(--ink2);border-radius:999px;padding:8px 13px;font-size:12.5px;font-weight:600;
+  transition:.15s}
+.chip.on{background:var(--amber);color:#1c1810;border-color:var(--amber)}
+.chip:hover{border-color:var(--amber)}
+/* table */
+.tablewrap{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--bg2)}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:12px 14px;font-size:13.5px;border-bottom:1px solid var(--line)}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--ink3);cursor:pointer;
+  white-space:nowrap;background:var(--panel)}
+th:hover{color:var(--amber)}
+tbody tr{cursor:pointer;transition:background .12s}
+tbody tr:hover{background:rgba(232,161,58,.06)}
+td.url{font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--ink);max-width:430px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+td.url .pt{display:inline-block;font-size:10px;color:var(--ink3);margin-left:0}
+.num{font-family:"JetBrains Mono",monospace}
+.grade{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;
+  border-radius:7px;font-family:"Fraunces",serif;font-weight:700;font-size:14px;color:#1c1810}
+.g-A{background:var(--A)} .g-B{background:var(--B)} .g-C{background:var(--C)}
+.g-D{background:var(--D)} .g-F{background:var(--F)} .g-none{background:#3a3328;color:var(--ink3)}
+.fresh{font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;text-transform:uppercase;
+  letter-spacing:.04em}
+.f-fresh{background:rgba(127,176,105,.18);color:var(--green)}
+.f-recent{background:rgba(170,196,107,.16);color:#aac46b}
+.f-ageing{background:rgba(232,161,58,.16);color:var(--amber)}
+.f-stale{background:rgba(217,138,79,.16);color:var(--D)}
+.f-very_stale{background:rgba(210,103,79,.16);color:var(--red)}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--green);margin-right:5px}
+.empty{padding:40px;text-align:center;color:var(--ink3)}
+/* drawer */
+.scrim{position:fixed;inset:0;background:rgba(8,7,5,.6);backdrop-filter:blur(2px);opacity:0;
+  pointer-events:none;transition:.2s;z-index:40}
+.scrim.on{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:0;height:100%;width:min(560px,94vw);background:var(--bg);
+  border-left:1px solid var(--line);transform:translateX(100%);transition:transform .26s cubic-bezier(.4,0,.2,1);
+  z-index:50;overflow-y:auto;box-shadow:-30px 0 60px rgba(0,0,0,.4)}
+.drawer.on{transform:translateX(0)}
+.drawer .dh{padding:22px 24px;border-bottom:1px solid var(--line);position:sticky;top:0;
+  background:linear-gradient(180deg,var(--bg),rgba(22,20,15,.92));backdrop-filter:blur(6px)}
+.drawer .x{position:absolute;top:18px;right:20px;cursor:pointer;color:var(--ink3);font-size:22px;
+  line-height:1}
+.drawer .x:hover{color:var(--ink)}
+.dtitle{font-family:"Fraunces",serif;font-size:22px;font-weight:600;margin:0 36px 4px 0;line-height:1.12}
+.durl{font-family:"JetBrains Mono",monospace;font-size:11.5px;color:var(--blue);word-break:break-all}
+.durl a{color:var(--blue)}
+.dbody{padding:22px 24px}
+.scorehead{display:flex;align-items:center;gap:14px;margin-bottom:18px}
+.scorehead .big{font-family:"Fraunces",serif;font-size:46px;font-weight:700;line-height:1}
+.scorehead .ofs{color:var(--ink3);font-size:13px}
+.gradebig{width:46px;height:46px;border-radius:10px;font-size:24px}
+.pillar{margin:14px 0}
+.pillar .ph{display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px}
+.pillar .ph .nm{font-weight:700;letter-spacing:.02em}
+.pillar .ph .pv{font-family:"JetBrains Mono",monospace;color:var(--ink2)}
+.track{height:8px;background:#2b261d;border-radius:99px;overflow:hidden}
+.track i{display:block;height:100%;border-radius:99px}
+.reasons{margin:7px 0 0;padding:0;list-style:none}
+.reasons li{font-size:12.5px;color:var(--ink2);padding:3px 0 3px 16px;position:relative}
+.reasons li:before{content:"›";position:absolute;left:0;color:var(--amber)}
+.reasons li.neg{color:var(--red)} .reasons li.neg:before{content:"–";color:var(--red)}
+.sec{margin-top:22px;border-top:1px solid var(--line);padding-top:16px}
+.sec h3{font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--ink3);margin:0 0 10px}
+.kv{display:grid;grid-template-columns:140px 1fr;gap:6px 12px;font-size:13px}
+.kv .k{color:var(--ink3)} .kv .v{color:var(--ink);font-family:"JetBrains Mono",monospace;font-size:12.5px}
+.flag{display:inline-block;background:rgba(210,103,79,.14);color:var(--red);border:1px solid rgba(210,103,79,.3);
+  font-size:11.5px;border-radius:7px;padding:4px 9px;margin:3px 5px 0 0}
+.added{display:inline-block;background:rgba(127,176,105,.14);color:var(--green);border:1px solid rgba(127,176,105,.3);
+  font-size:11.5px;border-radius:7px;padding:4px 9px;margin:3px 5px 0 0}
+.tag{display:inline-block;background:var(--bg2);border:1px solid var(--line);color:var(--ink2);
+  font-size:11px;border-radius:6px;padding:3px 8px;margin:2px 4px 0 0;font-family:"JetBrains Mono",monospace}
+.footnote{color:var(--ink3);font-size:12px;margin-top:26px;line-height:1.5;border-top:1px solid var(--line);padding-top:16px}
+@media(max-width:900px){.kpis{grid-template-columns:repeat(2,1fr)}h1{font-size:30px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <p class="kicker">BikeDekho · SEO Content Intelligence</p>
+    <h1>EEAT &amp; <em>Freshness</em> Monitor</h1>
+    <p class="sub">Every model URL crawled, dated, and scored against Google's Experience · Expertise · Authoritativeness · Trustworthiness framework. Click any row for the full reasoning.</p>
+    <p class="gen" id="gen"></p>
+    <div class="seedbanner" id="seedbanner" style="display:none">
+      <b>Seed preview.</b> Showing verified sample rows + queued URLs. Run <code>bikedekho_eeat_crawler.py</code> to populate live dates &amp; full coverage; the dashboard auto-reads the fresh <code>data.json</code> on its next load.
+    </div>
+  </header>
+
+  <section class="kpis" id="kpis"></section>
+
+  <div class="bar">
+    <input type="text" id="q" placeholder="Search URL or title…">
+    <select id="fFresh"><option value="">All freshness</option></select>
+    <select id="fGrade"><option value="">All grades</option></select>
+    <select id="fType"><option value="">All page types</option></select>
+    <span class="chip" data-toggle="noscore">No EEAT score</span>
+    <span class="chip" data-toggle="lowfresh">Low freshness</span>
+    <span class="chip" data-toggle="changed">Changed today</span>
+  </div>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr>
+        <th data-sort="url">URL</th>
+        <th data-sort="grade">Grade</th>
+        <th data-sort="total">EEAT</th>
+        <th data-sort="freshness_label">Freshness</th>
+        <th data-sort="last_updated">Last updated</th>
+        <th data-sort="word_count">Words</th>
+        <th data-sort="changed">Δ</th>
+      </tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    <div class="empty" id="empty" style="display:none">No URLs match these filters.</div>
+  </div>
+
+  <p class="footnote" id="rubric"></p>
+</div>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer"></aside>
+
+<script id="seed" type="application/json">{
+  "generated_at": "2026-06-01T06:39:33.933492+00:00",
+  "is_seed": true,
+  "summary": {
+    "total_urls": 19,
+    "scored": 3,
+    "no_eeat_score": 16,
+    "avg_eeat": 58.7,
+    "content_changed_today": 3,
+    "by_freshness": {
+      "very_stale": 19
+    },
+    "by_grade": {
+      "A": 1,
+      "C": 1,
+      "F": 1
+    },
+    "stale_or_worse": 19
+  },
+  "pages": [
+    {
+      "url": "https://www.bikedekho.com/royal-enfield/hunter",
+      "page_type": "model_page",
+      "status": "ok",
+      "http_status": 200,
+      "title": "Royal Enfield Hunter 350 Price, Mileage, Specs, Images & Colours",
+      "last_updated": null,
+      "last_updated_source": "pending_live_crawl",
+      "days_since_update": null,
+      "freshness_label": "very_stale",
+      "word_count": 1400,
+      "canonical": "https://www.bikedekho.com/royal-enfield/hunter",
+      "canonical_self": true,
+      "noindex": false,
+      "rating": 4.4,
+      "review_count": 1220,
+      "schema_types": [
+        "Product",
+        "BreadcrumbList",
+        "FAQPage",
+        "AggregateRating"
+      ],
+      "internal_links": 120,
+      "eeat": {
+        "experience": 20,
+        "expertise": 21,
+        "authoritativeness": 25,
+        "trustworthiness": 15,
+        "total": 81,
+        "grade": "A",
+        "reasons": {
+          "experience": [
+            "Has a user/owner reviews section (+6)",
+            "1220 owner reviews (+8)",
+            "Aggregate owner rating 4.4 shown (+3)",
+            "Owner-comparison content present (+3)"
+          ],
+          "expertise": [
+            "Expert verdict / road-test content (+7)",
+            "Substantial editorial text (1400 words) (+6)",
+            "Detailed specifications present (+5)",
+            "Variant price table (+3)"
+          ],
+          "authoritativeness": [
+            "Linked news / latest stories (+4)",
+            "Strong internal linking (120) (+6)",
+            "BreadcrumbList structured data (+4)",
+            "FAQ content/markup (+4)",
+            "Self-referencing canonical = indexable primary entity (+7)"
+          ],
+          "trustworthiness": [
+            "Served over HTTPS (+3)",
+            "Freshness = 'very_stale' (+0)",
+            "Product structured data (+4)",
+            "aggregateRating in schema (+3)",
+            "Transparent pricing (+3)",
+            "Healthy meta description (+2)"
+          ]
+        },
+        "flags": []
+      },
+      "seed": true,
+      "note": "Seed row from a verified live fetch. last_updated is pending the first real crawl run (chat-side fetch strips JSON-LD; the crawler reads raw HTML).",
+      "diff": {
+        "is_new": true,
+        "added_sections": [],
+        "removed_sections": [],
+        "word_delta": 1400,
+        "content_changed": true
+      }
+    },
+    {
+      "url": "https://www.bikedekho.com/bajaj/pulsar-n160",
+      "page_type": "model_page",
+      "status": "ok",
+      "http_status": 200,
+      "title": "Bajaj Pulsar N160 Price, Mileage, Specs, Images & Colours",
+      "last_updated": null,
+      "last_updated_source": "pending_live_crawl",
+      "days_since_update": null,
+      "freshness_label": "very_stale",
+      "word_count": 950,
+      "canonical": "https://www.bikedekho.com/bajaj/pulsar-n160",
+      "canonical_self": true,
+      "noindex": false,
+      "rating": null,
+      "review_count": null,
+      "schema_types": [
+        "Product",
+        "BreadcrumbList",
+        "FAQPage",
+        "AggregateRating"
+      ],
+      "internal_links": 110,
+      "eeat": {
+        "experience": 9,
+        "expertise": 14,
+        "authoritativeness": 25,
+        "trustworthiness": 15,
+        "total": 63,
+        "grade": "C",
+        "reasons": {
+          "experience": [
+            "Has a user/owner reviews section (+6)",
+            "Owner-comparison content present (+3)"
+          ],
+          "expertise": [
+            "Substantial editorial text (950 words) (+6)",
+            "Detailed specifications present (+5)",
+            "Variant price table (+3)"
+          ],
+          "authoritativeness": [
+            "Linked news / latest stories (+4)",
+            "Strong internal linking (110) (+6)",
+            "BreadcrumbList structured data (+4)",
+            "FAQ content/markup (+4)",
+            "Self-referencing canonical = indexable primary entity (+7)"
+          ],
+          "trustworthiness": [
+            "Served over HTTPS (+3)",
+            "Freshness = 'very_stale' (+0)",
+            "Product structured data (+4)",
+            "aggregateRating in schema (+3)",
+            "Transparent pricing (+3)",
+            "Healthy meta description (+2)"
+          ]
+        },
+        "flags": []
+      },
+      "seed": true,
+      "note": "Seed row from a verified live fetch. last_updated is pending the first real crawl run (chat-side fetch strips JSON-LD; the crawler reads raw HTML).",
+      "diff": {
+        "is_new": true,
+        "added_sections": [],
+        "removed_sections": [],
+        "word_delta": 950,
+        "content_changed": true
+      }
+    },
+    {
+      "url": "https://www.bikedekho.com/suzuki/burgman-street/images/handlebar-202338",
+      "page_type": "image",
+      "status": "ok",
+      "http_status": 200,
+      "title": "New Suzuki Burgman Street Price - Mileage, Colours, Images | BikeDekho",
+      "last_updated": null,
+      "last_updated_source": "pending_live_crawl",
+      "days_since_update": null,
+      "freshness_label": "very_stale",
+      "word_count": 140,
+      "canonical": "https://www.bikedekho.com/suzuki/burgman-street",
+      "canonical_self": false,
+      "noindex": false,
+      "rating": null,
+      "review_count": null,
+      "schema_types": [
+        "Product",
+        "BreadcrumbList",
+        "FAQPage",
+        "AggregateRating"
+      ],
+      "internal_links": 80,
+      "eeat": {
+        "experience": 0,
+        "expertise": 3,
+        "authoritativeness": 14,
+        "trustworthiness": 15,
+        "total": 32,
+        "grade": "F",
+        "reasons": {
+          "experience": [],
+          "expertise": [
+            "Thin content (140 words) (+0)",
+            "Variant price table (+3)"
+          ],
+          "authoritativeness": [
+            "Strong internal linking (80) (+6)",
+            "BreadcrumbList structured data (+4)",
+            "FAQ content/markup (+4)",
+            "Canonical points to a DIFFERENT URL \u2014 authority consolidated elsewhere (+0)"
+          ],
+          "trustworthiness": [
+            "Served over HTTPS (+3)",
+            "Freshness = 'very_stale' (+0)",
+            "Product structured data (+4)",
+            "aggregateRating in schema (+3)",
+            "Transparent pricing (+3)",
+            "Healthy meta description (+2)"
+          ]
+        },
+        "flags": [
+          "Secondary template ('image') \u2014 usually canonicalised to parent",
+          "Canonicalised to another URL",
+          "Thin content (<200 words)"
+        ]
+      },
+      "seed": true,
+      "note": "Seed row from a verified live fetch. last_updated is pending the first real crawl run (chat-side fetch strips JSON-LD; the crawler reads raw HTML).",
+      "diff": {
+        "is_new": true,
+        "added_sections": [],
+        "removed_sections": [],
+        "word_delta": 140,
+        "content_changed": true
+      }
+    },
+    {
+      "url": "https://www.bikedekho.com/hero/splendor-plus",
+      "page_type": "model_page",
+      "status": "queued",
+      "last_updated": null,
+      "freshness_label": "very_stale",
+      "eeat": null,
+      "diff": {
+        "is_new": true,
+        "content_changed": false
+      },
+      "note": "Queued \u2014 populated on first crawler run."
+    },
+    {
+      "url": "https://www.bikedekho.com/tvs/jupiter",
+      "page_type": "model_page",
+      "status": "queued",
+      "last_updated": null,
+      "freshness_label": "very_stale",
+      "eeat": null,
+      "diff": {
+        "is_new": true,
+        "content_changed": false
+      },
+      "note": "Queued \u2014 populated on first crawler run."
+    },
+    {
+      "url": "https://www.bikedekho.com/ather-energy/rizta",
+      "page_type": "model_page",
+      "status": "queued",
+      "last_updated": null,
+      "freshness_label": "very_stale",
+      "eeat": null,
+      "diff": {
+        "is_new": true,
+        "content_changed": false
+      },
+      "note": "Queued \u2014 populated on first crawler run."
+    },
+    {
+      "url": "https://www.bikedekho.com/ktm/duke-390",
+      "page_type": "model_page",
+      "status": "queued",
+      "last_updated": null,
+      "freshness_label": "very_stale",
+      "eeat": null,
+      "diff": {
+        "is_new": true,
+        "content_changed": false
+      },
+      "note": "Queued \u2014 populated on first crawler run."
+    },
+    {
+      "url": "https://www.bikedekho.com/yamaha/r15-v4",
+      "page_type": "model_page",
+      "status": "queued",
+      "last_updated": null,
+      "freshness_label": "very_stale",
+      "eeat": null,
+      "diff": {
+        "is_new": true,
+        "content_changed": false
+      },
+      "note": "Queued \u2014 populated on first crawler run."
+    },
+    {
+      "url": "https://www.bikedekho.com/honda/activa",
+      "page_type": "model_page",
+      "status": "queued",
+      "last_updated": null,
+      "freshness_label": "very_stale",
+      "eeat": null,
+      "diff": {
+        "is_new": true,
+        "content_changed": false
+      },
+      "note": "Queued \u2014 populated on first crawler run."
+    },
+    {
+      "url": "https://www.bikedekho.com/ola-electric/s1-pro",
+      "page_type": "model_page",
+      "status": "queued",
+      "last_updated": null,
+      "freshness_label": "very_stale",
+      "eeat": null,
+      "diff": {
+        "is_new": true,
+        "content_changed": false
+      },
+      "note": "Queued \u2014 populated on first crawler run."
+    },
+    {
+      "url": "https://www.bikedekho.com/bajaj/chetak",
+      "page_type": "model_page",
+      "status": "queued",
+      "last_updated": null,
+      "freshness_label": "very_stale",
+      "eeat": null,
+      "diff": {
+        "is_new": true,
+        "content_changed": false
+      },
+      "note": "Queued \u2014 populated on first crawler run."
+    },
+    {
+      "url": "https://www.bikedekho.com/royal-enfield/classic-350/",
+      "page_type": "model_page",
+      "status": "queued",
+      "last_updated": null,
+      "freshness_label": "very_stale",
+      "eeat": null,
+      "diff": {
+        "is_new": true,
+        "content_changed": false
+      },
+      "note": "Queued \u2014 populated on first crawler run."
+    },
+    {
+      "url": "https://www.bikedekho.com/ola-electric/s1-pro.html",
+      "page_type": "model_page",
+      "status": "queued",
+      "last_updated": null,
+      "freshness_label": "very_stale",
+      "eeat": null,
+      "diff": {
+        "is_new": true,
+        "content_changed": false
+      },
+      "note": "Queued \u2014 populated on first crawler run."
+    },
+    {
+      "url": "https://www.bikedekho.com/xsr155/bike-loan-emi-calculator",
+      "page_type": "emi_tool",
+      "status": "queued",
+      "last_updated": null,
+      "freshness_label": "very_stale",
+      "eeat": null,
+      "diff": {
+        "is_new": true,
+        "content_changed": false
+      },
+      "note": "Queued \u2014 populated on first crawler run."
+    },
+    {
+      "url": "https://www.bikedekho.com/vespa/elettrica?amp=1",
+      "page_type": "amp_or_param",
+      "status": "queued",
+      "last_updated": null,
+      "freshness_label": "very_stale",
+      "eeat": null,
+      "diff": {
+        "is_new": true,
+        "content_changed": false
+      },
+      "note": "Queued \u2014 populated on first crawler run."
+    },
+    {
+      "url": "https://www.bikedekho.com/hero/glamour/images/fuel-tank-right-157092",
+      "page_type": "image",
+      "status": "queued",
+      "last_updated": null,
+      "freshness_label": "very_stale",
+      "eeat": null,
+      "diff": {
+        "is_new": true,
+        "content_changed": false
+      },
+      "note": "Queued \u2014 populated on first crawler run."
+    },
+    {
+      "url": "https://www.bikedekho.com/bullet-650/mileage",
+      "page_type": "mileage",
+      "status": "queued",
+      "last_updated": null,
+      "freshness_label": "very_stale",
+      "eeat": null,
+      "diff": {
+        "is_new": true,
+        "content_changed": false
+      },
+      "note": "Queued \u2014 populated on first crawler run."
+    },
+    {
+      "url": "https://www.bikedekho.com/vespa/946-dragon/colors",
+      "page_type": "colours",
+      "status": "queued",
+      "last_updated": null,
+      "freshness_label": "very_stale",
+      "eeat": null,
+      "diff": {
+        "is_new": true,
+        "content_changed": false
+      },
+      "note": "Queued \u2014 populated on first crawler run."
+    },
+    {
+      "url": "https://www.bikedekho.com/royal-enfield/royal-enfield-electric-bike/range",
+      "page_type": "range",
+      "status": "queued",
+      "last_updated": null,
+      "freshness_label": "very_stale",
+      "eeat": null,
+      "diff": {
+        "is_new": true,
+        "content_changed": false
+      },
+      "note": "Queued \u2014 populated on first crawler run."
+    }
+  ]
+}</script>
+<script>
+const PILLAR_MAX={experience:20,expertise:25,authoritativeness:25,trustworthiness:30};
+const PILLAR_COL={experience:"var(--green)",expertise:"var(--blue)",authoritativeness:"var(--amber)",trustworthiness:"var(--amber2)"};
+let DATA=null, VIEW=[], sortKey="total", sortDir=-1;
+const toggles={noscore:false,lowfresh:false,changed:false};
+
+async function load(){
+  try{
+    const r=await fetch('./data.json',{cache:'no-store'});
+    if(!r.ok) throw 0;
+    DATA=await r.json();
+  }catch(e){
+    DATA=JSON.parse(document.getElementById('seed').textContent);
+  }
+  boot();
+}
+
+function boot(){
+  document.getElementById('gen').textContent=
+    'Generated '+new Date(DATA.generated_at).toLocaleString()+' · '+DATA.summary.total_urls+' URLs';
+  if(DATA.is_seed) document.getElementById('seedbanner').style.display='block';
+  renderKPIs();
+  fillSelect('fFresh', uniq('freshness_label'));
+  fillSelect('fGrade', ['A','B','C','D','F']);
+  fillSelect('fType', uniq('page_type'));
+  bind();
+  apply();
+  document.getElementById('rubric').innerHTML=
+    "<b>Scoring rubric.</b> Experience /20 (owner reviews, ratings, comparisons) · Expertise /25 (expert verdict, spec depth, editorial word count, pros &amp; cons) · Authoritativeness /25 (internal links, news, breadcrumb/FAQ schema, self-canonical) · Trustworthiness /30 (HTTPS, <i>freshness</i>, Product &amp; rating schema, transparent pricing, indexability). Freshness is the single heaviest trust lever, so a page that stops being updated visibly loses EEAT over time.";
+}
+
+const val=(p,k)=> k==='total'?(p.eeat?p.eeat.total:-1)
+  : k==='grade'?(p.eeat?p.eeat.grade:'Z')
+  : k==='changed'?(p.diff&&p.diff.content_changed?1:0)
+  : k==='last_updated'?(p.last_updated||'')
+  : (p[k]!==undefined?p[k]:'');
+
+function uniq(k){return [...new Set(DATA.pages.map(p=>p[k]).filter(Boolean))].sort();}
+function fillSelect(id,opts){const s=document.getElementById(id);opts.forEach(o=>{const e=document.createElement('option');e.value=o;e.textContent=o;s.appendChild(e);});}
+
+function bind(){
+  document.getElementById('q').oninput=apply;
+  ['fFresh','fGrade','fType'].forEach(id=>document.getElementById(id).onchange=apply);
+  document.querySelectorAll('.chip').forEach(c=>c.onclick=()=>{const t=c.dataset.toggle;toggles[t]=!toggles[t];c.classList.toggle('on',toggles[t]);apply();});
+  document.querySelectorAll('th[data-sort]').forEach(th=>th.onclick=()=>{const k=th.dataset.sort;if(sortKey===k)sortDir*=-1;else{sortKey=k;sortDir=(k==='url'||k==='freshness_label')?1:-1;}apply();});
+  document.getElementById('scrim').onclick=closeDrawer;
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDrawer();});
+}
+
+function apply(){
+  const q=document.getElementById('q').value.toLowerCase();
+  const ff=document.getElementById('fFresh').value;
+  const fg=document.getElementById('fGrade').value;
+  const ft=document.getElementById('fType').value;
+  VIEW=DATA.pages.filter(p=>{
+    if(q && !((p.url||'').toLowerCase().includes(q)||(p.title||'').toLowerCase().includes(q)))return false;
+    if(ff && p.freshness_label!==ff)return false;
+    if(fg && (!p.eeat||p.eeat.grade!==fg))return false;
+    if(ft && p.page_type!==ft)return false;
+    if(toggles.noscore && p.eeat)return false;
+    if(toggles.lowfresh && !['stale','very_stale'].includes(p.freshness_label))return false;
+    if(toggles.changed && !(p.diff&&p.diff.content_changed))return false;
+    return true;
+  }).sort((a,b)=>{let x=val(a,sortKey),y=val(b,sortKey);return (x<y?-1:x>y?1:0)*sortDir;});
+  renderTable();
+}
+
+function renderKPIs(){
+  const s=DATA.summary;
+  const cards=[
+    ['Total URLs',s.total_urls,''],
+    ['Scored',s.scored,'good'],
+    ['No EEAT score',s.no_eeat_score,'warn'],
+    ['Avg EEAT',s.avg_eeat,''],
+    ['Changed today',s.content_changed_today,'good'],
+    ['Stale / worse',s.stale_or_worse,'alert'],
+  ];
+  document.getElementById('kpis').innerHTML=cards.map(([l,v,c])=>
+    `<div class="kpi ${c}"><div class="lab">${l}</div><div class="val">${v}</div></div>`).join('');
+}
+
+function renderTable(){
+  const tb=document.getElementById('tbody');
+  document.getElementById('empty').style.display=VIEW.length?'none':'block';
+  tb.innerHTML=VIEW.map((p,i)=>{
+    const g=p.eeat?p.eeat.grade:'none';
+    const tot=p.eeat?p.eeat.total:'—';
+    const ch=p.diff&&p.diff.content_changed?'<span class="dot"></span>':'';
+    return `<tr data-i="${i}">
+      <td class="url" title="${p.url}">${p.url.replace('https://www.bikedekho.com','')}<br><span class="pt">${p.page_type||''}${p.status==='queued'?' · queued':''}</span></td>
+      <td><span class="grade g-${g}">${p.eeat?g:'·'}</span></td>
+      <td class="num">${tot}</td>
+      <td><span class="fresh f-${p.freshness_label||'very_stale'}">${(p.freshness_label||'unknown').replace('_',' ')}</span></td>
+      <td class="num">${p.last_updated||'—'}</td>
+      <td class="num">${p.word_count!=null?p.word_count:'—'}</td>
+      <td>${ch}</td>
+    </tr>`;
+  }).join('');
+  tb.querySelectorAll('tr').forEach(tr=>tr.onclick=()=>openDrawer(VIEW[+tr.dataset.i]));
+}
+
+function bar(label,key,p){
+  const v=p.eeat[key],max=PILLAR_MAX[key],pct=Math.round(v/max*100);
+  const rs=(p.eeat.reasons[key]||[]).map(r=>`<li class="${r.includes('(-')?'neg':''}">${r}</li>`).join('');
+  return `<div class="pillar"><div class="ph"><span class="nm">${label}</span>
+    <span class="pv">${v} / ${max}</span></div>
+    <div class="track"><i style="width:${pct}%;background:${PILLAR_COL[key]}"></i></div>
+    <ul class="reasons">${rs}</ul></div>`;
+}
+
+function openDrawer(p){
+  const d=document.getElementById('drawer');
+  let body='';
+  if(p.eeat){
+    const e=p.eeat;
+    body=`<div class="scorehead">
+        <span class="grade gradebig g-${e.grade}">${e.grade}</span>
+        <div><span class="big">${e.total}</span><span class="ofs"> / 100 EEAT</span></div>
+      </div>
+      ${bar('Experience','experience',p)}
+      ${bar('Expertise','expertise',p)}
+      ${bar('Authoritativeness','authoritativeness',p)}
+      ${bar('Trustworthiness','trustworthiness',p)}
+      ${e.flags&&e.flags.length?`<div class="sec"><h3>Flags</h3>${e.flags.map(f=>`<span class="flag">⚠ ${f}</span>`).join('')}</div>`:''}`;
+  } else {
+    body=`<div class="sec"><p style="color:var(--ink2)">${p.status==='queued'?'This URL is queued — it has not been crawled yet, so it has no EEAT score. It will be scored on the next crawler run.':'No EEAT score available for this URL.'}</p></div>`;
+  }
+  const diff=p.diff||{};
+  const diffHtml = (diff.added_sections&&diff.added_sections.length)
+      ? diff.added_sections.map(s=>`<span class="added">+ ${s}</span>`).join('')
+      : (diff.content_changed?'<span class="added">Content fingerprint changed</span>':'<span style="color:var(--ink3)">No change since last crawl</span>');
+  body+=`
+    <div class="sec"><h3>Freshness</h3>
+      <div class="kv">
+        <span class="k">Last updated</span><span class="v">${p.last_updated||'unknown'}</span>
+        <span class="k">Source</span><span class="v">${p.last_updated_source||'—'}</span>
+        <span class="k">Age (days)</span><span class="v">${p.days_since_update!=null?p.days_since_update:'—'}</span>
+        <span class="k">Bucket</span><span class="v">${p.freshness_label||'—'}</span>
+      </div></div>
+    <div class="sec"><h3>What content changed</h3>
+      <div style="font-size:12.5px;color:var(--ink2);margin-bottom:8px">Word delta: <b style="color:var(--ink)">${diff.word_delta!=null?(diff.word_delta>0?'+':'')+diff.word_delta:'—'}</b>${diff.is_new?' · first crawl':''}</div>
+      ${diffHtml}</div>
+    <div class="sec"><h3>Page facts</h3>
+      <div class="kv">
+        <span class="k">Page type</span><span class="v">${p.page_type||'—'}</span>
+        <span class="k">HTTP</span><span class="v">${p.http_status||'—'}</span>
+        <span class="k">Words</span><span class="v">${p.word_count!=null?p.word_count:'—'}</span>
+        <span class="k">Rating</span><span class="v">${p.rating!=null?p.rating:'—'}</span>
+        <span class="k">Reviews</span><span class="v">${p.review_count!=null?p.review_count:'—'}</span>
+        <span class="k">Internal links</span><span class="v">${p.internal_links!=null?p.internal_links:'—'}</span>
+        <span class="k">Canonical self</span><span class="v">${p.canonical_self===undefined?'—':p.canonical_self}</span>
+        <span class="k">Noindex</span><span class="v">${p.noindex===undefined?'—':p.noindex}</span>
+      </div>
+      ${p.canonical&&!p.canonical_self?`<div style="margin-top:8px"><span class="flag">canonical → ${p.canonical.replace('https://www.bikedekho.com','')}</span></div>`:''}
+      ${p.schema_types&&p.schema_types.length?`<div style="margin-top:10px">${p.schema_types.map(t=>`<span class="tag">${t}</span>`).join('')}</div>`:''}
+    </div>
+    ${p.note?`<div class="footnote">${p.note}</div>`:''}`;
+
+  d.innerHTML=`<div class="dh"><span class="x" onclick="closeDrawer()">×</span>
+      <div class="dtitle">${p.title||p.url.split('/').slice(-2).join(' / ')}</div>
+      <div class="durl"><a href="${p.url}" target="_blank" rel="noopener">${p.url}</a></div>
+    </div><div class="dbody">${body}</div>`;
+  d.classList.add('on');document.getElementById('scrim').classList.add('on');
+}
+function closeDrawer(){document.getElementById('drawer').classList.remove('on');document.getElementById('scrim').classList.remove('on');}
+load();
+</script>
+</body>
+</html>
