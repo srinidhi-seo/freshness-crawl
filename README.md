@@ -8,10 +8,11 @@ and presents it all in a daily-refreshing dashboard with drill-down and filters.
 
 | File | What it is |
 |---|---|
-| `bikedekho_eeat_crawler.py` | The engine. Crawls, dates, diffs, and scores every URL. Outputs `data/data.json`, `data/data.csv`, and a dated history snapshot. |
+| `bikedekho_eeat_crawler.py` | The engine. Pulls the model list **and `lastmod` dates** from the sitemap, crawls, dates, diffs, and scores every URL. Outputs `data/data.json`, `data/data.csv`, and a dated history snapshot. |
 | `dashboard.html` | The viewer. Reads `data.json`, shows KPIs, a sortable/filterable table, and a click-through EEAT breakdown per URL. Works standalone (embedded seed) or live (next to a real `data.json`). |
 | `daily-crawl.yml` | The scheduler. A GitHub Actions workflow that runs the crawler every day, commits fresh data, and publishes the dashboard. This is what makes it "update every day." |
-| `urls.txt` | Your URL list, one per line. |
+| `requirements.txt` | Pinned dependency versions so an unattended 3am run can't break on a surprise library release. |
+| `urls.txt` | **Optional fallback** only. The crawler now sources URLs from the sitemap by default, so you do not maintain this by hand. |
 
 ## How the daily update actually works (read this)
 
@@ -33,27 +34,35 @@ Pick one place to run the crawler daily:
 ## Quick start (local)
 
 ```bash
-pip install requests beautifulsoup4 lxml python-dateutil
+pip install -r requirements.txt
 
-# test on the first 30 URLs
-python bikedekho_eeat_crawler.py --urls urls.txt --limit 30
+# test on the first 30 sitemap URLs
+python bikedekho_eeat_crawler.py --sitemap https://www.bikedekho.com/BikeModel.xml --limit 30
 
-# full run
-python bikedekho_eeat_crawler.py --urls urls.txt --workers 6 --delay 0.8
+# full run (sitemap supplies the URL list AND the lastmod freshness dates)
+python bikedekho_eeat_crawler.py --sitemap https://www.bikedekho.com/BikeModel.xml --workers 6 --delay 0.8
+
+# fallback: crawl a static file instead of the sitemap
+python bikedekho_eeat_crawler.py --urls urls.txt
 
 # view it
 python -m http.server 8000   # then open http://localhost:8000/dashboard.html
 ```
+
+The crawler pulls model URLs straight from `BikeModel.xml`, **skips the `/hi/` Hindi
+duplicates** automatically, and uses each entry's `<lastmod>` as the primary freshness
+signal. New models appear and retired ones drop off on their own — no `urls.txt` upkeep.
 
 Open `dashboard.html` directly (double-click) to see the seed preview without crawling.
 
 ## How last-updated is detected
 
 The crawler tries the most reliable signal first and falls back:
-1. `dateModified` / `datePublished` in the page's JSON-LD structured data
-2. `<meta article:modified_time>` / `og:updated_time` / `lastmod`
-3. Visible "Last updated on …" text on the page
-4. HTTP `Last-Modified` response header
+1. **Sitemap `<lastmod>`** — the site's own declaration of when the page changed (primary)
+2. `dateModified` / `datePublished` in the page's JSON-LD structured data
+3. `<meta article:modified_time>` / `og:updated_time` / `lastmod`
+4. Visible "Last updated on …" text on the page
+5. HTTP `Last-Modified` response header
 
 The winning source is recorded per URL (`last_updated_source`) so you can trust or
 discount it. Age is bucketed into `fresh` (≤7d) · `recent` (≤30d) · `ageing` (≤90d) ·

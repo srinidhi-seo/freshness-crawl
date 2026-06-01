@@ -22,9 +22,13 @@ Run it once by hand, then put it on a daily schedule (GitHub Actions cron,
 system cron, or a cloud scheduler). See README.md.
 
 Usage:
+    # Preferred: pull the model list (and lastmod dates) straight from the sitemap
+    python bikedekho_eeat_crawler.py --sitemap https://www.bikedekho.com/BikeModel.xml
+    python bikedekho_eeat_crawler.py --sitemap <url> --workers 8 --delay 0.8
+    python bikedekho_eeat_crawler.py --sitemap <url> --limit 50   # test run
+
+    # Or fall back to a static file, one URL per line
     python bikedekho_eeat_crawler.py --urls urls.txt
-    python bikedekho_eeat_crawler.py --urls urls.txt --workers 8 --delay 1.0
-    python bikedekho_eeat_crawler.py --urls urls.txt --limit 50    # test run
 
 Dependencies:
     pip install requests beautifulsoup4 lxml python-dateutil
@@ -144,8 +148,18 @@ ONPAGE_DATE_RE = re.compile(
 )
 
 
-def detect_last_updated(resp, soup, jsonld_blocks):
-    """Return (iso_date_or_None, source_label). Tries the most reliable first."""
+def detect_last_updated(resp, soup, jsonld_blocks, sitemap_lastmod=None):
+    """Return (iso_date_or_None, source_label). Tries the most reliable first.
+
+    The sitemap <lastmod> is treated as the most authoritative signal when present,
+    because it is the site's own declaration of when the page last changed and it
+    costs no extra request."""
+    # 0) Sitemap <lastmod> — the site's own freshness declaration, most reliable
+    if sitemap_lastmod:
+        dt = _parse_date(sitemap_lastmod)
+        if dt:
+            return dt.date().isoformat(), "sitemap:lastmod"
+
     # 1) schema.org dateModified / datePublished inside JSON-LD
     for block in jsonld_blocks:
         for key in ("dateModified", "datePublished"):
@@ -435,15 +449,23 @@ def _grade(total):
 #  Per-URL pipeline
 # --------------------------------------------------------------------------- #
 
-def process_url(url, session, prev_snapshot):
+def process_url(url, session, prev_snapshot, sitemap_lastmod=None):
     resp, err = fetch(url, session)
     page_type = classify_url(url)
     record = {"url": url, "page_type": page_type, "crawled_at": TODAY}
 
     if err or resp is None:
+        # Even on a fetch failure, the sitemap may still tell us the page's age.
+        lu, lu_src = (None, "none")
+        if sitemap_lastmod:
+            dt = _parse_date(sitemap_lastmod)
+            if dt:
+                lu, lu_src = dt.date().isoformat(), "sitemap:lastmod"
+        days_old, fresh_label = freshness_bucket(lu)
         record.update({
             "status": "error", "error": err, "http_status": 0,
-            "last_updated": None, "freshness_label": "very_stale",
+            "last_updated": lu, "last_updated_source": lu_src,
+            "days_since_update": days_old, "freshness_label": fresh_label,
             "eeat": None, "diff": {"is_new": prev_snapshot is None, "content_changed": False},
         })
         return record
@@ -457,7 +479,7 @@ def process_url(url, session, prev_snapshot):
         except (json.JSONDecodeError, TypeError):
             continue
 
-    last_updated, lu_source = detect_last_updated(resp, soup, jsonld_blocks)
+    last_updated, lu_source = detect_last_updated(resp, soup, jsonld_blocks, sitemap_lastmod)
     days_old, fresh_label = freshness_bucket(last_updated)
     signals = extract_signals(url, resp, soup, jsonld_blocks)
     fingerprint, sections = content_fingerprint(BeautifulSoup(resp.text, "lxml"))
@@ -495,6 +517,33 @@ def process_url(url, session, prev_snapshot):
 #  Orchestration
 # --------------------------------------------------------------------------- #
 
+def fetch_sitemap(sitemap_url, session, include_hindi=False):
+    """Fetch a sitemap and return {clean_url: lastmod_iso_or_None}.
+
+    BikeDekho's BikeModel.xml lists every model twice — once as /hi/<...> (Hindi)
+    and once as the clean English /<brand>/<model>. We drop the /hi/ duplicates so
+    each model is scored exactly once, and use <lastmod> as the freshness source."""
+    try:
+        r = session.get(sitemap_url, timeout=40)
+        r.raise_for_status()
+    except requests.RequestException as e:
+        print(f"ERROR: could not fetch sitemap {sitemap_url}: {e}", file=sys.stderr)
+        return {}
+
+    soup = BeautifulSoup(r.content, "xml")
+    out = {}
+    for url_tag in soup.find_all("url"):
+        loc = url_tag.find("loc")
+        if not loc or not loc.text:
+            continue
+        loc_url = loc.text.strip()
+        if "/hi/" in loc_url and not include_hindi:   # skip Hindi locale duplicates
+            continue
+        lastmod_tag = url_tag.find("lastmod")
+        out[loc_url] = lastmod_tag.text.strip() if lastmod_tag and lastmod_tag.text else None
+    return out
+
+
 def load_prev_snapshot():
     path = os.path.join(DATA_DIR, "data_full.json")
     if os.path.exists(path):
@@ -516,14 +565,31 @@ def robots_allowed(urls):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--urls", required=True, help="Text file, one URL per line")
+    src = ap.add_mutually_exclusive_group(required=True)
+    src.add_argument("--sitemap", help="Sitemap URL (preferred). e.g. https://www.bikedekho.com/BikeModel.xml")
+    src.add_argument("--urls", help="Static text file, one URL per line (fallback)")
+    ap.add_argument("--include-hindi", action="store_true", help="Also crawl /hi/ locale URLs (default: skip)")
     ap.add_argument("--workers", type=int, default=6)
     ap.add_argument("--delay", type=float, default=0.8, help="Seconds between requests per worker")
     ap.add_argument("--limit", type=int, default=0, help="Crawl only first N (testing)")
     args = ap.parse_args()
 
-    with open(args.urls) as f:
-        urls = [ln.strip() for ln in f if ln.strip() and ln.startswith("http")]
+    session = requests.Session()
+    session.headers.update({"User-Agent": USER_AGENT, "Accept-Language": "en-IN,en;q=0.9"})
+
+    # url -> sitemap lastmod (None when sourced from a static file)
+    lastmod_map = {}
+    if args.sitemap:
+        lastmod_map = fetch_sitemap(args.sitemap, session, include_hindi=args.include_hindi)
+        urls = list(lastmod_map.keys())
+        print(f"Sitemap parsed: {len(urls)} model URLs (Hindi duplicates skipped).")
+        if not urls:
+            print("ERROR: sitemap returned no URLs — aborting.", file=sys.stderr)
+            sys.exit(1)
+    else:
+        with open(args.urls) as f:
+            urls = [ln.strip() for ln in f if ln.strip() and ln.startswith("http")]
+
     if args.limit:
         urls = urls[:args.limit]
 
@@ -531,17 +597,15 @@ def main():
     prev = load_prev_snapshot()
     allowed = robots_allowed(urls)
 
-    session = requests.Session()
-    session.headers.update({"User-Agent": USER_AGENT, "Accept-Language": "en-IN,en;q=0.9"})
-
     results = []
     def worker(u):
         if not allowed.get(u, True):
             return {"url": u, "status": "blocked_by_robots", "eeat": None,
                     "page_type": classify_url(u), "last_updated": None,
-                    "freshness_label": "very_stale", "diff": {"is_new": False, "content_changed": False}}
+                    "last_updated_source": "none", "freshness_label": "very_stale",
+                    "diff": {"is_new": False, "content_changed": False}}
         time.sleep(args.delay)
-        return process_url(u, session, prev.get(u))
+        return process_url(u, session, prev.get(u), sitemap_lastmod=lastmod_map.get(u))
 
     print(f"Crawling {len(urls)} URLs with {args.workers} workers ...")
     with concurrent.futures.ThreadPoolExecutor(max_workers=args.workers) as ex:
