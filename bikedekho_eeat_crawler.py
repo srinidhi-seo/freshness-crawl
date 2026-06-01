@@ -267,6 +267,28 @@ def extract_signals(url, resp, soup, jsonld_blocks):
 
     headings = [h.get_text(" ", strip=True) for h in soup.find_all(["h2", "h3"])]
 
+    # ---- Lifecycle status (launched / upcoming / discontinued) ----
+    # Text-based inference with a confidence level. Sitemap-drop (handled in main)
+    # is a stronger discontinued signal and overrides this when available.
+    low = text.lower()
+    has_exshowroom = bool(re.search(r"ex-?showroom", low))
+    upcoming_hit = bool(re.search(r"\bupcoming\b|expected launch|expected price|likely to be launched|expected to launch", low))
+    discontinued_hit = bool(re.search(r"discontinued|no longer (?:available|in production)|out of production", low))
+    if discontinued_hit:
+        lifecycle, lifecycle_conf = "discontinued", "medium"
+    elif upcoming_hit and not has_exshowroom:
+        lifecycle, lifecycle_conf = "upcoming", "medium"
+    elif upcoming_hit and has_exshowroom:
+        # mixed signals — likely a launched bike with an 'upcoming variants' mention
+        lifecycle, lifecycle_conf = "launched", "low"
+    elif has_exshowroom:
+        lifecycle, lifecycle_conf = "launched", "high"
+    else:
+        lifecycle, lifecycle_conf = "unknown", "low"
+
+    # ---- "Who" / authorship signal (Google's Who-How-Why framework) ----
+    has_author = bool(re.search(r"\bby\s+[A-Z][a-z]+|author|reviewed by|written by|edited by", text))
+
     signals = {
         "http_status": resp.status_code if resp is not None else 0,
         "final_url": resp.url if resp is not None else url,
@@ -276,6 +298,9 @@ def extract_signals(url, resp, soup, jsonld_blocks):
         "canonical": canonical,
         "canonical_self": canonical_self,
         "noindex": noindex,
+        "lifecycle": lifecycle,
+        "lifecycle_confidence": lifecycle_conf,
+        "has_author": has_author,
         "schema_types": sorted(schema_types),
         "has_product_schema": any("Product" in t for t in schema_types),
         "has_faq_schema": any("FAQ" in t for t in schema_types),
@@ -413,7 +438,20 @@ def score_eeat(s, freshness_label, page_type):
         trust -= 10; reasons["trustworthiness"].append(f"Bad HTTP status {s['http_status']} (-10)")
     trust = max(0, min(WEIGHTS["trustworthiness"], trust))
 
-    total = exp + expr + auth + trust
+    # Lifecycle-aware total. Google: content needn't cover ALL aspects. An upcoming
+    # bike has no owners, so Experience can't be earned — we exclude it and rescale
+    # the remaining pillars to 100 so an otherwise-strong upcoming page isn't penalised.
+    lifecycle = s.get("lifecycle", "unknown")
+    if lifecycle == "upcoming":
+        earned = expr + auth + trust
+        possible = WEIGHTS["expertise"] + WEIGHTS["authoritativeness"] + WEIGHTS["trustworthiness"]
+        total = round(earned / possible * 100)
+        reasons["experience"].append("Experience pillar not applicable pre-launch (no owners) — "
+                                      "excluded and remaining pillars rescaled to 100.")
+        exp_display = None  # signals 'N/A' to the dashboard
+    else:
+        total = exp + expr + auth + trust
+        exp_display = exp
 
     # Non-canonical / tool pages are penalised because they are not the
     # indexable entity Google ranks — flagged, not silently low.
@@ -425,16 +463,164 @@ def score_eeat(s, freshness_label, page_type):
     if s["word_count"] < 200:
         flags.append("Thin content (<200 words)")
 
+    recommendations = build_recommendations(s, freshness_label, page_type)
+
     return {
-        "experience": exp,
+        "experience": exp_display,
         "expertise": expr,
         "authoritativeness": auth,
         "trustworthiness": trust,
         "total": total,
         "grade": _grade(total),
+        "lifecycle": lifecycle,
+        "lifecycle_confidence": s.get("lifecycle_confidence", "low"),
         "reasons": reasons,
         "flags": flags,
+        "recommendations": recommendations,
     }
+
+
+def build_recommendations(s, freshness_label, page_type):
+    """Turn missing/weak signals into a prioritised, plain-language fix list.
+
+    Each item = {priority, points, pillar, action}. `points` = EEAT recoverable, so
+    the dashboard surfaces the highest-leverage action first. Derived from the SAME
+    signals that drive the score, so a recommendation only ever fires for a signal
+    that is genuinely ABSENT — anything already present on the page is never suggested.
+
+    Lifecycle-aware: an upcoming bike has no owners (no 'add reviews'), and a
+    discontinued bike shouldn't be chased for freshness/new variants."""
+    recs = []
+    lifecycle = s.get("lifecycle", "unknown")
+
+    # Secondary templates aren't the page to fix — they consolidate into the parent.
+    if page_type in ("image", "colours", "emi_tool", "amp_or_param", "feature_subpage"):
+        recs.append({"priority": "info", "points": 0, "pillar": "structure",
+                     "action": "This is a secondary page that canonicalises to the parent model page. "
+                               "Fix the parent model page instead — improvements here don't rank independently."})
+        return recs
+
+    # Discontinued models: don't recommend freshness/variants/reviews chasing.
+    if lifecycle == "discontinued":
+        if s["http_status"] >= 400 or s["http_status"] == 0:
+            recs.append({"priority": "P1", "points": 10, "pillar": "trust",
+                         "action": f"Page returns HTTP {s['http_status']}. Either restore a 200 or 301-redirect it "
+                                   "to the closest current model — don't leave a broken discontinued page live."})
+        recs.append({"priority": "info", "points": 0, "pillar": "structure",
+                     "action": "Model appears discontinued. Don't chase freshness or new variants here. "
+                               "Decide: keep as an archive/spec reference, or 301-redirect to the successor model "
+                               "to consolidate its authority. Freshness penalties are intentionally not applied."})
+        if not s["canonical_self"] and s["canonical"]:
+            recs.append({"priority": "P2", "points": 7, "pillar": "authority",
+                         "action": "Canonical points elsewhere — confirm that's intentional for a retired model."})
+        band = {"P1": 0, "P2": 1, "P3": 2, "info": 3}
+        recs.sort(key=lambda r: (band.get(r["priority"], 9), -r["points"]))
+        return recs
+
+    is_upcoming = (lifecycle == "upcoming")
+
+    # ---- Trustworthiness (heaviest levers first) ----
+    if s["http_status"] >= 400 or s["http_status"] == 0:
+        recs.append({"priority": "P1", "points": 10, "pillar": "trust",
+                     "action": f"Page returns HTTP {s['http_status']}. Restore a 200 response or redirect it — "
+                               "a broken page earns no ranking and bleeds trust."})
+    if s["noindex"]:
+        recs.append({"priority": "P1", "points": 5, "pillar": "trust",
+                     "action": "Page is set to noindex — Google is told not to rank it. "
+                               "Remove the noindex tag if this page should be discoverable."})
+    if freshness_label in ("stale", "very_stale"):
+        recs.append({"priority": "P1", "points": 12 if freshness_label == "very_stale" else 10, "pillar": "trust",
+                     "action": ("Launch is approaching but the page is going stale — keep it current with the latest "
+                                "spec leaks, expected-price updates and launch-timeline news so it ranks when demand peaks."
+                                if is_upcoming else
+                                "Page hasn't been updated in months. Refresh it — update prices, add the latest "
+                                "variant/colour or news, and re-save so the modified date moves. Freshness is the "
+                                "single biggest trust lever.")})
+    elif freshness_label == "ageing":
+        recs.append({"priority": "P2", "points": 4, "pillar": "trust",
+                     "action": "Page is ageing (last updated 1-3 months ago). Schedule a light refresh to keep it fresh."})
+    if not s["has_product_schema"]:
+        recs.append({"priority": "P2", "points": 4, "pillar": "trust",
+                     "action": "No Product structured data. Add Product schema so Google can read price, "
+                               "rating and availability — enables rich results."})
+    if not s["has_aggregate_rating"] and not is_upcoming:
+        recs.append({"priority": "P3", "points": 3, "pillar": "trust",
+                     "action": "No aggregateRating in schema. Expose the owner rating in structured data to "
+                               "qualify for star rich-snippets."})
+    if s["meta_description_len"] < 70:
+        recs.append({"priority": "P3", "points": 2, "pillar": "trust",
+                     "action": "Meta description is missing or too short. Write a 120-160 char description with "
+                               "the model name and a hook to lift click-through."})
+
+    # ---- Expertise ----
+    if s["word_count"] < 350:
+        recs.append({"priority": "P1", "points": 6, "pillar": "expertise",
+                     "action": f"Thin content ({s['word_count']} words). Expand the editorial overview to 800+ words — "
+                               "design, performance, ownership, who it's for. Thin pages rarely rank for competitive terms."})
+    elif s["word_count"] < 800:
+        recs.append({"priority": "P2", "points": 3, "pillar": "expertise",
+                     "action": f"Moderate depth ({s['word_count']} words). Extend toward 800+ words for full topical coverage."})
+    if not s["has_expert_overview"]:
+        recs.append({"priority": "P2", "points": 7, "pillar": "expertise",
+                     "action": ("No expert preview/first-look content. Add an editorial first-look on what to expect at launch "
+                                "— specs, positioning, rivals."
+                                if is_upcoming else
+                                "No expert verdict / road-test content. Add a first-hand expert review section — "
+                                "this is core E-E-A-T 'Expertise' and a strong ranking signal.")})
+    if not s.get("has_author", True):
+        recs.append({"priority": "P3", "points": 3, "pillar": "expertise",
+                     "action": "No visible author/byline. Add an author byline with credentials — Google's 'Who' "
+                               "signal: it should be self-evident who wrote the content."})
+    if not s["has_specs"]:
+        recs.append({"priority": "P2", "points": 5, "pillar": "expertise",
+                     "action": "No detailed specifications detected. Add a full spec table (engine, mileage, weight, features)."})
+    if not s["has_pros_cons"] and not is_upcoming:
+        recs.append({"priority": "P3", "points": 4, "pillar": "expertise",
+                     "action": "No pros & cons. Add a 'things we like / don't like' block — high-value, scannable content."})
+    if not s["has_price_table"] and not is_upcoming:
+        recs.append({"priority": "P3", "points": 3, "pillar": "expertise",
+                     "action": "No variant price table. Add ex-showroom / on-road pricing by variant and city."})
+
+    # ---- Authoritativeness ----
+    if s["canonical"] and not s["canonical_self"]:
+        recs.append({"priority": "P1", "points": 7, "pillar": "authority",
+                     "action": "Canonical points to a different URL, so this page passes its authority elsewhere. "
+                               "If this is meant to be the primary page, set a self-referencing canonical."})
+    if s["internal_links"] < 15:
+        recs.append({"priority": "P2", "points": 6, "pillar": "authority",
+                     "action": f"Weak internal linking ({s['internal_links']} links). Add links to related models, "
+                               "the brand hub, comparisons and news to distribute authority."})
+    if not (s["has_faq_section"] or s["has_faq_schema"]):
+        recs.append({"priority": "P3", "points": 4, "pillar": "authority",
+                     "action": "No FAQ. Add a FAQ section with FAQPage schema — captures long-tail queries and FAQ rich results."})
+    if not s["has_breadcrumb_schema"]:
+        recs.append({"priority": "P3", "points": 4, "pillar": "authority",
+                     "action": "No BreadcrumbList schema. Add breadcrumb markup to clarify site hierarchy for Google."})
+    if not s["has_news_section"]:
+        recs.append({"priority": "P3", "points": 4, "pillar": "authority",
+                     "action": "No linked news / latest stories. Surface recent articles about this model to show topical activity."})
+
+    # ---- Experience (skip owner-based items for upcoming models — no owners yet) ----
+    if not is_upcoming:
+        if not s["has_reviews_section"]:
+            recs.append({"priority": "P2", "points": 6, "pillar": "experience",
+                         "action": "No user/owner reviews section. Add owner reviews — first-hand 'Experience' is the "
+                                   "newest and increasingly important E-E-A-T pillar."})
+        elif not s["review_count"]:
+            recs.append({"priority": "P3", "points": 3, "pillar": "experience",
+                         "action": "Reviews section exists but no review volume detected. Encourage owner reviews to build depth."})
+        if not s["has_comparison"]:
+            recs.append({"priority": "P3", "points": 3, "pillar": "experience",
+                         "action": "No comparison content. Add 'compare with similar bikes' to help buyers and capture comparison queries."})
+    else:
+        recs.append({"priority": "info", "points": 0, "pillar": "experience",
+                     "action": "Upcoming model — owner-review and ownership-experience signals don't apply yet "
+                               "(no one has bought it). These are intentionally excluded from scoring until launch."})
+
+    # Sort by points desc so the biggest win is first; stable within equal points.
+    band = {"P1": 0, "P2": 1, "P3": 2, "info": 3}
+    recs.sort(key=lambda r: (band.get(r["priority"], 9), -r["points"]))
+    return recs
 
 
 def _grade(total):
@@ -504,6 +690,8 @@ def process_url(url, session, prev_snapshot, sitemap_lastmod=None):
         "noindex": signals["noindex"],
         "rating": signals["rating"],
         "review_count": signals["review_count"],
+        "lifecycle": signals["lifecycle"],
+        "lifecycle_confidence": signals["lifecycle_confidence"],
         "schema_types": signals["schema_types"],
         "internal_links": signals["internal_links"],
         "eeat": eeat,
@@ -648,12 +836,15 @@ def build_summary(pages):
         g = p["eeat"]["grade"]
         by_grade[g] = by_grade.get(g, 0) + 1
     changed = [p for p in pages if p.get("diff", {}).get("content_changed")]
+    p1_pages = sum(1 for p in scored if any(r.get("priority") == "P1"
+                  for r in (p["eeat"].get("recommendations") or [])))
     return {
         "total_urls": len(pages),
         "scored": len(scored),
         "no_eeat_score": len(no_score),
         "avg_eeat": avg,
         "content_changed_today": len(changed),
+        "pages_with_p1_actions": p1_pages,
         "by_freshness": by_fresh,
         "by_grade": by_grade,
         "stale_or_worse": sum(by_fresh.get(k, 0) for k in ("stale", "very_stale")),
