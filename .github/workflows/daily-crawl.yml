@@ -48,18 +48,38 @@ jobs:
       # Safe commit: a real no-change day stays green; a genuine push failure goes
       # red so GitHub emails you. The rebase guards against a human commit landing
       # between this job's checkout and its push.
+      # Push the freshly-crawled data. Data files are regenerated wholesale each run,
+      # so there's no meaningful merge with the previous run — today's data replaces
+      # yesterday's. We copy our fresh data aside, hard-sync to remote main, copy our
+      # data back on top, then commit & push (retrying if the remote moved again).
+      # No rebase, no merge, so the add/add conflicts that broke the run can't occur.
       - name: Commit refreshed data
         run: |
           git config user.name  "eeat-bot"
           git config user.email "eeat-bot@users.noreply.github.com"
-          git add data/ || true
-          if git diff --cached --quiet; then
-            echo "No changes to commit"
-          else
-            git commit -m "Daily EEAT crawl: $(date -u +%F)"
-            git pull --rebase --autostash || true
-            git push
+          if [ -z "$(git status --porcelain data/)" ]; then
+            echo "No changes to commit"; exit 0
           fi
+          # 1) Stash our generated data outside git's view.
+          rm -rf /tmp/crawl-data && cp -r data /tmp/crawl-data
+          for attempt in 1 2 3 4 5; do
+            # 2) Get exactly what's on the server right now.
+            git fetch origin main
+            git reset --hard origin/main
+            # 3) Lay our fresh data back on top (ours always win — newest crawl wins).
+            rm -rf data && cp -r /tmp/crawl-data data
+            git add data/
+            if git diff --cached --quiet; then
+              echo "No net change after sync"; exit 0
+            fi
+            git commit -m "Daily EEAT crawl: $(date -u +%F)"
+            # 4) Push; if the remote moved between fetch and push, loop and redo.
+            if git push origin HEAD:main; then
+              echo "Pushed on attempt $attempt"; exit 0
+            fi
+            echo "Push race on attempt $attempt — retrying"; sleep 3
+          done
+          echo "::error::Could not push after 5 attempts"; exit 1
 
       # ---- Publish dashboard.html + data.json as a live site ----
       - name: Stage site
